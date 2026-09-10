@@ -1,6 +1,6 @@
 {
   "name": "dijksarchief",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
   "description": "Private landing page linking to the family Google Photos albums.",
@@ -8,7 +8,7 @@
     "build": "node scripts/build.mjs",
     "encrypt": "node scripts/build.mjs && node scripts/encrypt.mjs",
     "password:set": "node scripts/set-password.mjs",
-    "release": "npm version patch -m \"Release v%s\""
+    "release": "npm version -m \"Release v%s\""
   },
   "devDependencies": {
     "pagecrypt": "^6.0.0"

@@ -5,6 +5,28 @@ private Google Photos albums.
 
 **Live page:** https://jasper-dijkstra.github.io/dijksarchief/
 
+## Procedures
+
+Pre-commit hooks automatically runs the `index.html` encryption and stages it for commit.
+
+```sh
+git add -A
+git commit -m "commit message"
+git push
+```
+
+Deploying the site requires a tagged release. From a clean branch, run:
+
+```sh
+npm run release -- minor # or patch, major, or an exact version such as 1.4.0
+git push --follow-tags
+```
+
+The tag triggers the deploy workflow, and the new version appears in the footer. It refuses to
+deploy when the tag and `package.json` disagree, so set the version through `npm run release`.
+
+Run `npm run build` to preview: it writes `dist/index.html`, the same page without the password.
+
 ## Files
 
 | File | Purpose |
@@ -40,33 +62,6 @@ you open it and re-encrypts on save, so you edit it like an ordinary YAML file. 
 
 Anything in `secrets/` that is not `*.enc.yaml` is gitignored, so a stray decrypted copy cannot be
 committed by accident.
-
-## Committing
-
-The pre-commit hook rebuilds `dist/index.html`, encrypts it into `index.html` and stages the result,
-then checks that no plaintext album link survived. So a normal commit is enough:
-
-```sh
-git add -A
-git commit -m "Update albums"
-git push
-```
-
-The hook needs the stored password. Without it the build is skipped, the hook says so, and the guard
-still blocks anything that leaks links. `--no-verify` skips the hook entirely.
-
-## Releasing
-
-Pushing to `main` no longer deploys. The site publishes on a version tag:
-
-```sh
-npm run release        # bumps package.json, commits, tags v1.0.1
-git push --follow-tags
-```
-
-The version and build date appear in the footer, taken from `package.json` through the `{{version}}`
-and `{{date}}` placeholders in `src/index.html`. Because the hook rebuilds during the version commit,
-the published page carries the new number.
 
 ## The page password
 
@@ -127,17 +122,14 @@ This writes `dist/index.html`. Open that file in a browser to check your work. O
 `src/index.html` directly shows the page without cards, because the links are only added at build
 time.
 
-## Publish
+`npm run encrypt` does the same and then encrypts the result into `index.html`. The pre-commit hook
+runs both, so you rarely need either by hand.
 
-The pre-commit hook already builds and encrypts, so publishing is a tag away. To encrypt by hand:
+## Deployment
 
-```sh
-npm run encrypt
-```
-
-Deployment runs through `.github/workflows/deploy.yml`, which triggers on `v*` tags and uploads only
-`index.html`. Set **Settings > Pages > Source** to *GitHub Actions* once, or the workflow cannot
-publish.
+`.github/workflows/deploy.yml` triggers on `v*` tags and uploads only `index.html`. Set
+**Settings > Pages > Source** to *GitHub Actions* once, or the workflow cannot publish. The workflow
+refuses to deploy when the tag and `package.json` disagree.
 
 Give the password to the family by phone or a message app, never in the same message as the link.
 
