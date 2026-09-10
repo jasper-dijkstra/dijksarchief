@@ -1,7 +1,8 @@
 node_modules/
 
-# Real album links. Never commit this file: the repository is public.
-links.json
+# Plaintext secrets. Only the .enc.yaml versions belong in git.
+secrets/*.yaml
+!secrets/*.enc.yaml
 
 # Plaintext build output. Only the encrypted index.html belongs in git.
 dist/

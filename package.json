@@ -7,10 +7,13 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "encrypt": "node scripts/build.mjs && node scripts/encrypt.mjs",
-    "links:seal": "sops --encrypt links.json > links.enc.json",
-    "links:open": "sops --decrypt links.enc.json > links.json"
+    "password:set": "node scripts/set-password.mjs",
+    "release": "npm version patch -m \"Release v%s\""
   },
   "devDependencies": {
     "pagecrypt": "^6.0.0"
+  },
+  "dependencies": {
+    "yaml": "^2.9.0"
   }
 }

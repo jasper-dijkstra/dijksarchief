@@ -2,7 +2,7 @@ name: Deploy page to GitHub Pages
 
 on:
   push:
-    branches: ["main"]
+    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
@@ -23,6 +23,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # The page is built locally, so the tag must match the version baked into index.html.
+      - name: Check the tag against package.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          package="$(node -p "require('./package.json').version")"
+          if [ "$tag" != "$package" ]; then
+            echo "Tag v$tag does not match package.json version $package." >&2
+            echo "Run 'npm run release' locally instead of tagging by hand." >&2
+            exit 1
+          fi
 
       # Only the encrypted index.html is published; the sources stay unpublished.
       - name: Collect the published file
