@@ -194,6 +194,12 @@ ul {
   margin-top: 0.15rem;
   font-size: 0.9375rem;
   color: var(--text-muted);
+  white-space: pre-line;
+}
+
+.card .meta .note {
+  display: block;
+  font-style: italic;
 }
 
 .card .chevron {

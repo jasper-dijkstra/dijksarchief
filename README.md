@@ -1,4 +1,4 @@
-# Dijks Archief
+# Het Dijksarchief
 
 Private landing page for the family photo archive. The page holds only links; the photos stay in
 private Google Photos albums.
@@ -10,6 +10,7 @@ private Google Photos albums.
 | File | Purpose |
 | --- | --- |
 | `links.json` | The real album links. Untracked, never committed. |
+| `links.enc.json` | The same links, encrypted with SOPS. This one is committed. |
 | `links.example.json` | Template showing the shape of `links.json`. |
 | `src/index.html` | Page template. The cards go where `<!-- LINKS -->` sits. |
 | `src/styles.css` | The styling. |
@@ -28,12 +29,34 @@ encrypts one file, which is why the build inlines the CSS.
 
 ```sh
 npm install
-cp links.example.json links.json
 git config core.hooksPath .githooks
+npm run links:open
 ```
 
-The last line enables the pre-commit guard. Git never enables hooks on clone, so run it once per
-machine.
+The hook line enables the pre-commit guard; git never enables hooks on clone. The last line decrypts
+`links.enc.json` into `links.json` and needs the age key described below.
+
+## Working on a second machine
+
+The links travel through git inside `links.enc.json`, encrypted with SOPS and an age key. Copy the
+private key to the other machine, by hand and over a secure channel:
+
+```
+~/Library/Application Support/sops/age/keys.txt
+```
+
+That path is where SOPS looks on macOS. On Linux it is `~/.config/sops/age/keys.txt`. The public
+recipient sits in `.sops.yaml` and is safe to commit; the private key must never enter the
+repository.
+
+After editing `links.json`, seal it again before committing:
+
+```sh
+npm run links:seal
+```
+
+`npm run build` decrypts `links.enc.json` by itself when `links.json` is missing, so a fresh clone
+with the key needs no extra step.
 
 ## Edit the links
 
@@ -67,6 +90,16 @@ with that link can see the album, so do not post it in public.
 
 Header text, footer text and the `YOUR_EMAIL_HERE` placeholder live in
 [src/index.html](src/index.html).
+
+The full round trip after an edit:
+
+```sh
+npm run links:seal     # links.json -> links.enc.json
+npm run encrypt        # build, then password prompt, writes index.html
+git add -A
+git commit -m "Update albums"
+git push
+```
 
 ## Build
 

@@ -3,16 +3,26 @@
 
 import { readFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const root = new URL("../", import.meta.url);
 
-let links;
-try {
-  links = JSON.parse(await readFile(new URL("links.json", root), "utf8"));
-} catch (error) {
-  if (error.code === "ENOENT") process.exit(0);
-  throw error;
+async function readLinks() {
+  try {
+    return JSON.parse(await readFile(new URL("links.json", root), "utf8"));
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  try {
+    const encrypted = fileURLToPath(new URL("links.enc.json", root));
+    return JSON.parse(execFileSync("sops", ["--decrypt", encrypted], { encoding: "utf8" }));
+  } catch {
+    return null;
+  }
 }
+
+const links = await readLinks();
+if (!links) process.exit(0);
 
 let staged;
 try {
