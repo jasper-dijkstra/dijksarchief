@@ -2,12 +2,14 @@
 // The output holds the real album links in plaintext, so it stays out of git (see .gitignore).
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const root = new URL("../", import.meta.url);
 const htmlUrl = new URL("src/index.html", root);
 const cssUrl = new URL("src/styles.css", root);
 const linksUrl = new URL("links.json", root);
+const encryptedUrl = new URL("links.enc.json", root);
 const exampleUrl = new URL("links.example.json", root);
 const outUrl = new URL("dist/index.html", root);
 
@@ -61,6 +63,18 @@ async function renderIcon(icon) {
   return escapeHtml(icon ?? "\u2605");
 }
 
+// The first meta line stays upright; anything after a newline is rendered as an italic note.
+function renderMeta(text) {
+  const [first, ...rest] = String(text)
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const note = rest.length
+    ? `<span class="note">${escapeHtml(rest.join("\n"))}</span>`
+    : "";
+  return `${escapeHtml(first)}${note}`;
+}
+
 async function renderLink(link, indent) {
   if (!link.title || !link.url) {
     throw new Error("Every link needs a title and a url");
@@ -69,7 +83,7 @@ async function renderLink(link, indent) {
   const href = escapeHtml(checkUrl(link.url, link.title));
   const icon = await renderIcon(link.icon);
   const meta = link.meta
-    ? `\n${indent}      <span class="meta">${escapeHtml(link.meta)}</span>`
+    ? `\n${indent}      <span class="meta">${renderMeta(link.meta)}</span>`
     : "";
 
   return [
@@ -107,9 +121,21 @@ async function readLinks() {
     return JSON.parse(await readFile(linksUrl, "utf8"));
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
-    console.warn("links.json not found, building from links.example.json");
-    return JSON.parse(await readFile(exampleUrl, "utf8"));
   }
+
+  try {
+    const plain = execFileSync("sops", ["--decrypt", fileURLToPath(encryptedUrl)], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    console.log("Decrypted links.enc.json");
+    return JSON.parse(plain);
+  } catch (error) {
+    if (error.code !== "ENOENT" && error.status === undefined) throw error;
+  }
+
+  console.warn("No links found, building from links.example.json");
+  return JSON.parse(await readFile(exampleUrl, "utf8"));
 }
 
 const [html, css, links] = await Promise.all([

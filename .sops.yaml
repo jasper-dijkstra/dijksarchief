@@ -1,0 +1,4 @@
+creation_rules:
+  - path_regex: links(\.enc)?\.json$
+    encrypted_regex: ^(url|title|meta|heading)$
+    age: age17wqu86xcwkl43gcz400uuz78z0ag9ey4z4z2ud5a7v9k9l7g39wstsyc6w
