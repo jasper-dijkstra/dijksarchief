@@ -13,6 +13,7 @@ private Google Photos albums.
 | `src/styles.css` | The styling. Edit this one. |
 | `build.mjs` | Inlines the CSS into the HTML and writes the root `index.html`. |
 | `index.html` | Generated. Do not edit by hand; the next build overwrites it. |
+| `.githooks/pre-commit` | Runs the build and stages `index.html` before each commit. |
 
 Pagecrypt encrypts a single file, so the published page must carry its CSS inside a `<style>` block.
 The build step keeps the source readable and produces that self-contained file.
@@ -28,6 +29,20 @@ npm run build
 While editing, open `src/index.html` directly in a browser. It loads `src/styles.css` and looks the
 same as the built page.
 
+## Automatic build before each commit
+
+GitHub Pages publishes the committed `index.html` as it is; it never runs the build. A pre-commit
+hook therefore rebuilds the file and stages it, so the published page can never fall behind `src/`.
+
+Git does not enable the hook on clone. Run this once per machine:
+
+```sh
+git config core.hooksPath .githooks
+```
+
+To commit without the hook, add `--no-verify`. The published page then keeps the previous content
+until the next normal commit.
+
 ## Edit the links
 
 Open [src/index.html](src/index.html) and replace every `YOUR_GOOGLE_PHOTOS_LINK_HERE` with a real
@@ -40,11 +55,12 @@ To add an album, copy one `<li>` block and change the title, the subtitle and th
 group, copy a whole `<section>` block and give the `<h2>` a new `id`, then point the section's
 `aria-labelledby` at that same `id`.
 
-Run `npm run build` after every change, then commit both the source and the generated `index.html`.
+Run `npm run build` after every change, or let the pre-commit hook do it, then commit both the
+source and the generated `index.html`.
 
 ## Publish
 
-1. Run `npm run build`, then commit and push to `main`.
+1. Commit and push to `main`. The hook rebuilds `index.html` as part of the commit.
 2. In the repository, go to **Settings > Pages**.
 3. Under **Build and deployment**, set **Source** to *Deploy from a branch*, branch `main`, folder
    `/ (root)`.
