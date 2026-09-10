@@ -88,8 +88,8 @@ This builds, then asks for a password twice and writes the encrypted `index.html
 read from a hidden prompt, so it stays out of your shell history. Commit and push `index.html`, and
 GitHub Pages deploys it within a minute.
 
-Enable Pages once, under **Settings > Pages**: set **Source** to *Deploy from a branch*, branch
-`main`, folder `/ (root)`.
+Deployment runs through `.github/workflows/deploy.yml`, which uploads only `index.html`. Set
+**Settings > Pages > Source** to *GitHub Actions* once, or the workflow cannot publish.
 
 Give the password to the family by phone or a message app, never in the same message as the link.
 
