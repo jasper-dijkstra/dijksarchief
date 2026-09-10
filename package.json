@@ -1,0 +1,10 @@
+{
+  "name": "dijksarchief",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Private landing page linking to the family Google Photos albums.",
+  "scripts": {
+    "build": "node build.mjs"
+  }
+}

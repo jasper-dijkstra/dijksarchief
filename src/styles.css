@@ -1,0 +1,270 @@
+:root {
+  --bg: #14110f;
+  --bg-glow: #1f1a17;
+  --surface: #221d1a;
+  --surface-hover: #2c2521;
+  --border: #3a312c;
+  --text: #f5efe8;
+  --text-muted: #b6a89c;
+  --accent: #e8a87c;
+  --accent-text: #1a1512;
+  --radius: 16px;
+  --focus: #ffd7a8;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f7f2ea;
+    --bg-glow: #efe6d8;
+    --surface: #ffffff;
+    --surface-hover: #fdf7ee;
+    --border: #e0d5c4;
+    --text: #211b16;
+    --text-muted: #6b5d50;
+    --accent: #a8622c;
+    --accent-text: #ffffff;
+    --focus: #a8622c;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 2.5rem 1.25rem 4rem;
+  min-height: 100vh;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--text);
+  background: var(--bg);
+  background-image: radial-gradient(circle at 50% 0%, var(--bg-glow) 0%, var(--bg) 55%);
+  background-attachment: fixed;
+}
+
+.page {
+  width: 100%;
+  max-width: 34rem;
+  margin: 0 auto;
+}
+
+
+/* ---------- Header ---------- */
+
+.masthead {
+  text-align: center;
+  margin-bottom: 2.75rem;
+}
+
+.crest {
+  width: 5rem;
+  height: 5rem;
+  margin: 0 auto 1.25rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  overflow: hidden;
+}
+
+.crest img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.masthead h1 {
+  margin: 0 0 0.6rem;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.masthead p {
+  margin: 0 auto;
+  max-width: 26rem;
+  color: var(--text-muted);
+  font-size: 1.0625rem;
+}
+
+
+/* ---------- Sections ---------- */
+
+section {
+  margin-bottom: 2.5rem;
+}
+
+h2 {
+  margin: 0 0 0.9rem;
+  padding-left: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+
+/* ---------- Link buttons ---------- */
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.05rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+}
+
+.card:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+}
+
+.card:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.card:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.card .icon {
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--bg-glow);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.card .label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.card .title {
+  display: block;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.card .meta {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+}
+
+.card .chevron {
+  flex: none;
+  color: var(--text-muted);
+  transition: transform 0.18s ease, color 0.18s ease;
+}
+
+.card:hover .chevron {
+  color: var(--accent);
+  transform: translateX(3px);
+}
+
+.card--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.card--primary .meta,
+.card--primary .chevron {
+  color: inherit;
+  opacity: 0.85;
+}
+
+.card--primary .icon {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.card--primary:hover {
+  background: var(--accent);
+  filter: brightness(1.06);
+}
+
+
+/* ---------- Footer ---------- */
+
+footer {
+  margin-top: 3rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+}
+
+footer a {
+  color: var(--text);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+
+/* ---------- Larger screens and motion preferences ---------- */
+
+@media (min-width: 40rem) {
+  body {
+    font-size: 19px;
+    padding-top: 4rem;
+  }
+
+  .masthead h1 {
+    font-size: 2.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
