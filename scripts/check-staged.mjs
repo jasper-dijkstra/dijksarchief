@@ -1,27 +1,22 @@
-// Refuses a commit when the staged index.html still contains a real album link from links.json.
+// Refuses a commit when the staged index.html still contains a real album link.
 // The repository is public, so only the encrypted build may be committed.
 
-import { readFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { parse as parseYaml } from "yaml";
 
 const root = new URL("../", import.meta.url);
 
-async function readLinks() {
+function readLinks() {
   try {
-    return JSON.parse(await readFile(new URL("links.json", root), "utf8"));
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
-  }
-  try {
-    const encrypted = fileURLToPath(new URL("links.enc.json", root));
-    return JSON.parse(execFileSync("sops", ["--decrypt", encrypted], { encoding: "utf8" }));
+    const sealed = fileURLToPath(new URL("secrets/links.enc.yaml", root));
+    return parseYaml(execFileSync("sops", ["--decrypt", sealed], { encoding: "utf8" }));
   } catch {
     return null;
   }
 }
 
-const links = await readLinks();
+const links = readLinks();
 if (!links) process.exit(0);
 
 let staged;
@@ -32,7 +27,12 @@ try {
 }
 
 const urls = links.sections.flatMap((section) => section.links.map((link) => link.url));
-const leaked = urls.filter((url) => staged.includes(url));
+
+// The build escapes hrefs, so a raw url from the JSON does not appear verbatim in the HTML.
+const escapeHtml = (value) =>
+  String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+const leaked = urls.filter((url) => staged.includes(url) || staged.includes(escapeHtml(url)));
 
 if (leaked.length > 0) {
   console.error("Commit blocked: index.html contains plaintext album links.");

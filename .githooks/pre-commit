@@ -1,11 +1,18 @@
 #!/bin/sh
-# Blocks commits that would publish plaintext album links. Enabled via core.hooksPath=.githooks.
+# Rebuilds and encrypts index.html, then blocks the commit if plaintext links slipped through.
+# Enabled via core.hooksPath=.githooks.
 
 set -e
 
 if ! command -v node >/dev/null 2>&1; then
-  echo "pre-commit: node not found, skipping the leak check" >&2
+  echo "pre-commit: node not found, skipping the build" >&2
   exit 0
+fi
+
+if node scripts/build.mjs >/dev/null && node scripts/encrypt.mjs >/dev/null; then
+  git add index.html
+else
+  echo "pre-commit: could not rebuild index.html; commit it yourself or use --no-verify" >&2
 fi
 
 node scripts/check-staged.mjs
