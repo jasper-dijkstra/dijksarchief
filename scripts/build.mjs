@@ -1,0 +1,154 @@
+// Renders links.json into src/index.html, inlines src/styles.css and writes dist/index.html.
+// The output holds the real album links in plaintext, so it stays out of git (see .gitignore).
+
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+
+const root = new URL("../", import.meta.url);
+const htmlUrl = new URL("src/index.html", root);
+const cssUrl = new URL("src/styles.css", root);
+const linksUrl = new URL("links.json", root);
+const exampleUrl = new URL("links.example.json", root);
+const outUrl = new URL("dist/index.html", root);
+
+const LINK_TAG = /^([ \t]*)<link rel="stylesheet" href="styles\.css">[ \t]*$/m;
+const LINKS_SLOT = /^([ \t]*)<!-- LINKS -->[ \t]*$/m;
+const ICON_REF = /(src|href)="icons\/([A-Za-z0-9._-]+)"/g;
+const ICON_FILE = /^[A-Za-z0-9._-]+\.png$/;
+
+const escapeHtml = (value) =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+const slugify = (value, fallback) =>
+  String(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || fallback;
+
+const iconCache = new Map();
+
+async function iconDataUrl(name) {
+  if (!iconCache.has(name)) {
+    const data = await readFile(new URL(`src/icons/${name}`, root));
+    iconCache.set(name, `data:image/png;base64,${data.toString("base64")}`);
+  }
+  return iconCache.get(name);
+}
+
+function checkUrl(url, title) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(`Link "${title}" has an unparsable url: ${url}`);
+  }
+  if (parsed.protocol !== "https:") {
+    throw new Error(`Link "${title}" must use https, got ${parsed.protocol}`);
+  }
+  return parsed.href;
+}
+
+async function renderIcon(icon) {
+  if (icon && ICON_FILE.test(icon)) {
+    return `<img src="${await iconDataUrl(icon)}" alt="">`;
+  }
+  return escapeHtml(icon ?? "\u2605");
+}
+
+async function renderLink(link, indent) {
+  if (!link.title || !link.url) {
+    throw new Error("Every link needs a title and a url");
+  }
+  const classes = link.primary ? "card card--primary" : "card";
+  const href = escapeHtml(checkUrl(link.url, link.title));
+  const icon = await renderIcon(link.icon);
+  const meta = link.meta
+    ? `\n${indent}      <span class="meta">${escapeHtml(link.meta)}</span>`
+    : "";
+
+  return [
+    `${indent}<li>`,
+    `${indent}  <a class="${classes}" href="${href}" target="_blank" rel="noopener noreferrer">`,
+    `${indent}    <span class="icon" aria-hidden="true">${icon}</span>`,
+    `${indent}    <span class="label">`,
+    `${indent}      <span class="title">${escapeHtml(link.title)}</span>${meta}`,
+    `${indent}    </span>`,
+    `${indent}    <span class="chevron" aria-hidden="true">&#8250;</span>`,
+    `${indent}  </a>`,
+    `${indent}</li>`,
+  ].join("\n");
+}
+
+async function renderSection(section, position, indent) {
+  const headingId = `${slugify(section.id ?? section.heading, `section-${position}`)}-heading`;
+  const items = [];
+  for (const link of section.links) {
+    items.push(await renderLink(link, `${indent}    `));
+  }
+
+  return [
+    `${indent}<section aria-labelledby="${headingId}">`,
+    `${indent}  <h2 id="${headingId}">${escapeHtml(section.heading)}</h2>`,
+    `${indent}  <ul>`,
+    items.join("\n"),
+    `${indent}  </ul>`,
+    `${indent}</section>`,
+  ].join("\n");
+}
+
+async function readLinks() {
+  try {
+    return JSON.parse(await readFile(linksUrl, "utf8"));
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+    console.warn("links.json not found, building from links.example.json");
+    return JSON.parse(await readFile(exampleUrl, "utf8"));
+  }
+}
+
+const [html, css, links] = await Promise.all([
+  readFile(htmlUrl, "utf8"),
+  readFile(cssUrl, "utf8"),
+  readLinks(),
+]);
+
+if (!LINK_TAG.test(html)) {
+  throw new Error('No <link rel="stylesheet" href="styles.css"> found in src/index.html');
+}
+if (!LINKS_SLOT.test(html)) {
+  throw new Error("No <!-- LINKS --> placeholder found in src/index.html");
+}
+if (/<\/style/i.test(css)) {
+  throw new Error("src/styles.css contains a </style sequence, which would break the inlined block");
+}
+
+const output = html
+  .replace(LINK_TAG, (_match, indent) => {
+    const body = css.trimEnd().replace(/^(?=.)/gm, `${indent}  `);
+    return `${indent}<style>\n${body}\n${indent}</style>`;
+  })
+  .replace(LINKS_SLOT, (_match, indent) => `${indent}__SECTIONS__`);
+
+const sections = [];
+for (const [position, section] of links.sections.entries()) {
+  sections.push(await renderSection(section, position + 1, "    "));
+}
+
+let page = output.replace("    __SECTIONS__", sections.join("\n\n"));
+
+for (const [, attribute, name] of page.matchAll(ICON_REF)) {
+  page = page.replace(`${attribute}="icons/${name}"`, `${attribute}="${await iconDataUrl(name)}"`);
+}
+
+const banner = "<!-- Generated by scripts/build.mjs. Edit src/ and links.json instead. -->\n";
+
+await mkdir(new URL("dist/", root), { recursive: true });
+await writeFile(outUrl, banner + page, "utf8");
+
+console.log(`Wrote ${fileURLToPath(outUrl)} with ${links.sections.length} sections`);

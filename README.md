@@ -9,78 +9,95 @@ private Google Photos albums.
 
 | File | Purpose |
 | --- | --- |
-| `src/index.html` | The markup. Edit this one. |
-| `src/styles.css` | The styling. Edit this one. |
-| `build.mjs` | Inlines the CSS into the HTML and writes the root `index.html`. |
-| `index.html` | Generated. Do not edit by hand; the next build overwrites it. |
-| `.githooks/pre-commit` | Runs the build and stages `index.html` before each commit. |
+| `links.json` | The real album links. Untracked, never committed. |
+| `links.example.json` | Template showing the shape of `links.json`. |
+| `src/index.html` | Page template. The cards go where `<!-- LINKS -->` sits. |
+| `src/styles.css` | The styling. |
+| `src/icons/` | Button and site icons. The build inlines them as data URIs. |
+| `scripts/build.mjs` | Renders the links, inlines the CSS, writes `dist/index.html`. |
+| `scripts/encrypt.mjs` | Encrypts `dist/index.html` into the published `index.html`. |
+| `scripts/check-staged.mjs` | Refuses a commit that would publish plaintext links. |
+| `dist/index.html` | Plaintext build. Untracked. |
+| `index.html` | The published, encrypted page. |
 
-Pagecrypt encrypts a single file, so the published page must carry its CSS inside a `<style>` block.
-The build step keeps the source readable and produces that self-contained file.
+The repository is public, so the album links must never enter git. They live in `links.json`, which
+`.gitignore` excludes, and they reach the web only inside the encrypted `index.html`. Pagecrypt
+encrypts one file, which is why the build inlines the CSS.
 
-## Build
-
-Node 18 or newer, no dependencies to install.
-
-```sh
-npm run build
-```
-
-While editing, open `src/index.html` directly in a browser. It loads `src/styles.css` and looks the
-same as the built page.
-
-## Automatic build before each commit
-
-GitHub Pages publishes the committed `index.html` as it is; it never runs the build. A pre-commit
-hook therefore rebuilds the file and stages it, so the published page can never fall behind `src/`.
-
-Git does not enable the hook on clone. Run this once per machine:
+## Setup
 
 ```sh
+npm install
+cp links.example.json links.json
 git config core.hooksPath .githooks
 ```
 
-To commit without the hook, add `--no-verify`. The published page then keeps the previous content
-until the next normal commit.
+The last line enables the pre-commit guard. Git never enables hooks on clone, so run it once per
+machine.
 
 ## Edit the links
 
-Open [src/index.html](src/index.html) and replace every `YOUR_GOOGLE_PHOTOS_LINK_HERE` with a real
-album link. Replace `YOUR_EMAIL_HERE` in the footer as well.
+Put your albums in `links.json`. Each section becomes a heading, each entry becomes a button:
+
+```json
+{
+  "sections": [
+    {
+      "heading": "Per jaar",
+      "links": [
+        {
+          "title": "2024",
+          "meta": "Verjaardagen en vakanties",
+          "icon": "photo.png",
+          "url": "https://photos.app.goo.gl/...",
+          "primary": true
+        }
+      ]
+    }
+  ]
+}
+```
+
+`meta`, `icon` and `primary` are optional. `icon` takes a file name from `src/icons/` —
+`photo.png`, `fotoscan.png`, `diascan.png`, `video.png` or `vuurtoren.png` — or any text or emoji.
+The build rejects any url that is not `https`.
 
 To get an album link in Google Photos: open the album, choose **Share**, then **Copy link**. Anyone
 with that link can see the album, so do not post it in public.
 
-To add an album, copy one `<li>` block and change the title, the subtitle and the `href`. To add a
-group, copy a whole `<section>` block and give the `<h2>` a new `id`, then point the section's
-`aria-labelledby` at that same `id`.
+Header text, footer text and the `YOUR_EMAIL_HERE` placeholder live in
+[src/index.html](src/index.html).
 
-Run `npm run build` after every change, or let the pre-commit hook do it, then commit both the
-source and the generated `index.html`.
-
-## Publish
-
-1. Commit and push to `main`. The hook rebuilds `index.html` as part of the commit.
-2. In the repository, go to **Settings > Pages**.
-3. Under **Build and deployment**, set **Source** to *Deploy from a branch*, branch `main`, folder
-   `/ (root)`.
-4. Wait for the deployment, then open the live page.
-
-## Password protection
-
-GitHub Pages serves static files, so the page has no server-side login. Use
-[Pagecrypt](https://github.com/Greenheart/pagecrypt) to encrypt the file in the browser. The visitor
-types a password, and only then does the browser decrypt the HTML.
+## Build
 
 ```sh
 npm run build
-npx pagecrypt index.html index.html "<password>"
 ```
 
-The second command overwrites the generated `index.html` with the encrypted version. That is safe,
-because the readable source stays in `src/`. Re-run both commands after every change.
+This writes `dist/index.html`. Open that file in a browser to check your work. Opening
+`src/index.html` directly shows the page without cards, because the links are only added at build
+time.
+
+## Publish
+
+```sh
+npm run encrypt
+```
+
+This builds, then asks for a password twice and writes the encrypted `index.html`. The password is
+read from a hidden prompt, so it stays out of your shell history. Commit and push `index.html`, and
+GitHub Pages deploys it within a minute.
+
+Enable Pages once, under **Settings > Pages**: set **Source** to *Deploy from a branch*, branch
+`main`, folder `/ (root)`.
 
 Give the password to the family by phone or a message app, never in the same message as the link.
+
+## The commit guard
+
+`.githooks/pre-commit` compares the staged `index.html` against the urls in `links.json` and aborts
+the commit if it finds one in plaintext. That catches the case where you commit a build instead of
+an encrypted page. Bypass it with `--no-verify` only if you are certain the file holds no real links.
 
 ## Keep it out of search engines
 

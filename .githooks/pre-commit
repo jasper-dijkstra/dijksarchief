@@ -1,12 +1,11 @@
 #!/bin/sh
-# Keeps the published index.html in step with src/. Enabled via core.hooksPath=.githooks.
+# Blocks commits that would publish plaintext album links. Enabled via core.hooksPath=.githooks.
 
 set -e
 
 if ! command -v node >/dev/null 2>&1; then
-  echo "pre-commit: node not found, skipping build of index.html" >&2
+  echo "pre-commit: node not found, skipping the leak check" >&2
   exit 0
 fi
 
-node build.mjs >/dev/null
-git add index.html
+node scripts/check-staged.mjs

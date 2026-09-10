@@ -1,0 +1,7 @@
+node_modules/
+
+# Real album links. Never commit this file: the repository is public.
+links.json
+
+# Plaintext build output. Only the encrypted index.html belongs in git.
+dist/
