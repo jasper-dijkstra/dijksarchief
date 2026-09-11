@@ -83,9 +83,17 @@ other machine, by hand and over a secure channel:
 ~/Library/Application Support/sops/age/keys.txt
 ```
 
-That path is where SOPS looks on macOS. On Linux it is `~/.config/sops/age/keys.txt`. The public
-recipient sits in `.sops.yaml` and is safe to commit; the private key must never enter the
-repository.
+That path is where SOPS looks on macOS. On Linux it is `~/.config/sops/age/keys.txt`, on Windows
+`%AppData%\sops\age\keys.txt`. The public recipient sits in `.sops.yaml` and is safe to commit; the
+private key must never enter the repository.
+
+### On Windows
+
+Everything works, with three notes. Install `sops` and `age` first, for example with
+`winget install sops` and `winget install age`. Run the git commands from Git Bash, PowerShell or
+the VS Code terminal; the pre-commit hook needs the `sh` that ships with Git for Windows, which is
+always present. And `.gitattributes` forces LF endings on `.githooks/`, because `sh` rejects a
+script with CRLF endings.
 
 ## Edit the links
 
